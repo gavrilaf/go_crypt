@@ -30,43 +30,37 @@ func TestAES(t *testing.T) {
 	}
 }
 
-func TestGenerateAESKey(t *testing.T) {
+func TestGenerateKey(t *testing.T) {
 	psw := "Test password"
 
-	salt, err := generateSalt()
+	key, err := generateKey(psw, PBKDF2)
 	if err != nil {
 		t.Error(err)
 	}
 
-	key := generateAESKey(psw, salt)
-
-	s_salt := b64.StdEncoding.EncodeToString(salt)
-	s_key := b64.StdEncoding.EncodeToString(key)
-	fmt.Printf("Generated salt: %v, key: %v\n", s_salt, s_key)
+	fmt.Printf("PBKDF2: %v\n", key)
+	fmt.Printf("PBKDF2 (hex): %v, %v\n", key.getSalt(CODING_HEX), key.getKey(CODING_HEX))
 }
 
-func TestGenerateKeyAndCrypt(t *testing.T) {
+func TestPBKDF2AndCrypt(t *testing.T) {
 	psw := "Test password"
 	src := "This is test string"
 
-	salt, err := generateSalt()
+	key, err := generateKey(psw, PBKDF2)
 	if err != nil {
 		t.Error(err)
 	}
 
-	key := generateAESKey(psw, salt)
+	fmt.Printf("Generated key: %v\n", key)
 
-	s_key := b64.StdEncoding.EncodeToString(key)
-	fmt.Printf("Generated key: %v\n", s_key)
-
-	coded, err := AESEncrypt(src, key)
+	coded, err := AESEncrypt(src, key.key)
 	if err != nil {
 		t.Error(err)
 	}
 
 	fmt.Printf("Crypted: %v\n", coded)
 
-	decoded, err := AESDecrypt(coded, key)
+	decoded, err := AESDecrypt(coded, key.key)
 	if err != nil {
 		t.Error(err)
 	}

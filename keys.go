@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"crypto/sha1"
+	"fmt"
 	"golang.org/x/crypto/pbkdf2"
 	"io"
 )
@@ -19,6 +20,17 @@ func generateSalt() ([]byte, error) {
 	return salt, nil
 }
 
-func generateAESKey(psw string, salt []byte) []byte {
+func generatePBKDF2Key(psw string, salt []byte) []byte {
 	return pbkdf2.Key([]byte(psw), salt, 4096, 32, sha1.New)
+}
+
+func generateKey(psw string, f KeyDerivationFunc) (*CryptoKey, error) {
+	salt, err := generateSalt()
+	if err != nil {
+		return nil, fmt.Errorf("Generate salt error: %v", err.Error())
+	}
+
+	key := generatePBKDF2Key(psw, salt)
+
+	return &CryptoKey{salt, key}, nil
 }
