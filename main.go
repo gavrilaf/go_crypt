@@ -2,6 +2,7 @@ package main
 
 import (
 	b64 "encoding/base64"
+	"encoding/hex"
 
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,11 @@ import (
 
 const (
 	VERSION = "1.0"
+)
+
+const (
+	CODING_B64 = "base64"
+	CODING_HEX = "hex"
 )
 
 func main() {
@@ -63,6 +69,7 @@ func Decrypt(c *gin.Context) {
 
 func GenerateKey(c *gin.Context) {
 	psw := c.PostForm("password")
+	coding := c.PostForm("coding")
 
 	salt, err := generateSalt()
 	if err != nil {
@@ -72,7 +79,21 @@ func GenerateKey(c *gin.Context) {
 
 	key := generateAESKey(psw, salt)
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "salt": b64.StdEncoding.EncodeToString(salt), "key": b64.StdEncoding.EncodeToString(key)})
+	var str_salt, str_key string
+
+	switch strings.ToLower(coding) {
+	case CODING_B64:
+		str_salt = b64.StdEncoding.EncodeToString(salt)
+		str_key = b64.StdEncoding.EncodeToString(key)
+	case CODING_HEX:
+		str_salt = hex.EncodeToString(salt)
+		str_key = hex.EncodeToString(key)
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": fmt.Errorf("Unknown coding: %v", coding).Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "salt": str_salt, "key": str_key})
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
