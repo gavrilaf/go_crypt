@@ -11,20 +11,20 @@ import (
 	"strings"
 )
 
-func AESDecrypt(text string, key []byte) (*string, error) {
+func AESDecrypt(text string, key []byte) (string, error) {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	decodedMsg, err := b64.URLEncoding.DecodeString(addBase64Padding(text))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if (len(decodedMsg) % aes.BlockSize) != 0 {
-		return nil, errors.New("blocksize must be multipe of decoded message length")
+		return "", errors.New("blocksize must be multipe of decoded message length")
 	}
 
 	iv := decodedMsg[:aes.BlockSize]
@@ -35,32 +35,32 @@ func AESDecrypt(text string, key []byte) (*string, error) {
 
 	unpadMsg, err := Unpad(msg)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	finalMsg := string(unpadMsg)
-	return &finalMsg, nil
+	return finalMsg, nil
 }
 
-func AESEncrypt(text string, key []byte) (*string, error) {
+func AESEncrypt(text string, key []byte) (string, error) {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	msg := Pad([]byte(text))
 	ciphertext := make([]byte, aes.BlockSize+len(msg))
 	iv := ciphertext[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return nil, err
+		return "", err
 	}
 
 	cfb := cipher.NewCFBEncrypter(block, iv)
 	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(msg))
 	finalMsg := removeBase64Padding(b64.URLEncoding.EncodeToString(ciphertext))
 
-	return &finalMsg, nil
+	return finalMsg, nil
 }
 
 func addBase64Padding(value string) string {

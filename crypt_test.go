@@ -16,12 +16,12 @@ func TestAES(t *testing.T) {
 		t.Error(err)
 	}
 
-	fmt.Printf("Crypted: %v\n", *coded)
+	fmt.Printf("Crypted: %v\n", coded)
 
-	decoded, err := AESDecrypt(*coded, key_b64)
+	decoded, err := AESDecrypt(coded, key_b64)
 	if err != nil {
 		t.Error(err)
 	}
 
-	fmt.Printf("Decrypted: %v\n", *decoded)
+	fmt.Printf("Decrypted: %v\n", decoded)
 }
