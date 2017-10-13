@@ -23,6 +23,7 @@ func main() {
 	{
 		v1.POST("/encrypt", Encrypt)
 		v1.POST("/decrypt", Decrypt)
+		v1.POST("/generate_key", GenerateKey)
 	}
 
 	router.Run()
@@ -59,6 +60,22 @@ func Decrypt(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "result": res})
 }
+
+func GenerateKey(c *gin.Context) {
+	psw := c.PostForm("password")
+
+	salt, err := generateSalt()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+
+	key := generateAESKey(psw, salt)
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "salt": b64.StdEncoding.EncodeToString(salt), "key": b64.StdEncoding.EncodeToString(key)})
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 func DoEncrypt(data string, key string, algo string) (string, error) {
 	decoded_key, err := b64.StdEncoding.DecodeString(key)
