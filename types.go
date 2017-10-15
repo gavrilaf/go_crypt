@@ -1,8 +1,6 @@
 package main
 
 import (
-	b64 "encoding/base64"
-	"encoding/hex"
 	"fmt"
 )
 
@@ -12,15 +10,6 @@ const (
 	CODING_B64 = StringCoding("base64")
 	CODING_HEX = StringCoding("hex")
 )
-
-func bytesToString(bt []byte, coding StringCoding) string {
-	switch coding {
-	case CODING_HEX:
-		return hex.EncodeToString(bt)
-	default: // CODING_B64
-		return b64.StdEncoding.EncodeToString(bt)
-	}
-}
 
 ///////////////////////////////////////////////////////////////////////
 

@@ -1,13 +1,8 @@
 package main
 
 import (
-	b64 "encoding/base64"
-
-	"fmt"
 	"github.com/gin-gonic/gin"
-
 	"net/http"
-	"strings"
 )
 
 const (
@@ -33,46 +28,12 @@ func Ping(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": VERSION})
 }
 
-func Encrypt(c *gin.Context) {
-	s := c.PostForm("string")
-	key := c.PostForm("key")
-	algo := c.PostForm("algo")
-
-	res, err := DoEncrypt(s, key, strings.ToLower(algo))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"success": true, "result": res})
-}
-
-func Decrypt(c *gin.Context) {
-	s := c.PostForm("string")
-	key := c.PostForm("key")
-	algo := c.PostForm("algo")
-
-	res, err := DoDecrypt(s, key, strings.ToLower(algo))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"success": true, "result": res})
-}
-
 func GenerateKey(c *gin.Context) {
 	psw := c.PostForm("password")
 
-	var coding StringCoding
-
-	switch strings.ToLower(c.PostForm("coding")) {
-	case "base64":
-		coding = CODING_B64
-	case "hex":
-		coding = CODING_HEX
-	default:
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Unknown coding"})
+	coding, err := getCoding(c.PostForm("coding"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
 		return
 	}
 
@@ -85,32 +46,40 @@ func GenerateKey(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "salt": key.getSalt(coding), "key": key.getKey(coding)})
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+func Encrypt(c *gin.Context) {
+	text := c.PostForm("text")
+	key := c.PostForm("key")
 
-func DoEncrypt(data string, key string, algo string) (string, error) {
-	decoded_key, err := b64.StdEncoding.DecodeString(key)
+	coding, err := getCoding(c.PostForm("coding"))
 	if err != nil {
-		return "", fmt.Errorf("Can't decode key: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
 	}
 
-	switch algo {
-	case "aes":
-		return AESEncrypt(data, decoded_key)
-	default:
-		return "", fmt.Errorf("Unknow algorithm: %v", algo)
+	encrypted, err := DoEncrypt(text, key, coding)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
 	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "result": encrypted})
 }
 
-func DoDecrypt(data string, key string, algo string) (string, error) {
-	decoded_key, err := b64.StdEncoding.DecodeString(key)
+func Decrypt(c *gin.Context) {
+	text := c.PostForm("text")
+	key := c.PostForm("key")
+
+	coding, err := getCoding(c.PostForm("coding"))
 	if err != nil {
-		return "", fmt.Errorf("Can't decode key: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
 	}
 
-	switch algo {
-	case "aes":
-		return AESDecrypt(data, decoded_key)
-	default:
-		return "", fmt.Errorf("Unknow algorithm: %v", algo)
+	decrypted, err := DoDecrypt(text, key, coding)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
 	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "result": decrypted})
 }
